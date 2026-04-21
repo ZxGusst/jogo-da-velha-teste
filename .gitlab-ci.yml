@@ -1,0 +1,60 @@
+image: maven:3.9-eclipse-temurin-17
+
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - .m2/repository/
+
+# ─── STAGE 1: BUILD ──────────────────────────────────────────────────────────
+build:
+  stage: build
+  script:
+    - echo "==> Compilando projeto Jogo da Velha..."
+    - mvn clean compile
+    - echo "==> Build concluído!"
+  artifacts:
+    paths:
+      - target/
+
+# ─── STAGE 2: TEST ───────────────────────────────────────────────────────────
+test:
+  stage: test
+  script:
+    - echo "==> Executando testes unitários..."
+    - mvn test
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - target/surefire-reports/TEST-*.xml
+    paths:
+      - target/surefire-reports/
+    expire_in: 1 week
+
+# ─── STAGE 3: DEPLOY (apenas na branch main) ─────────────────────────────────
+deploy:
+  stage: deploy
+  script:
+    - echo "==> Iniciando deploy do Jogo da Velha..."
+    - mvn package -DskipTests
+    - echo "==> JAR gerado com sucesso!"
+    - ls -lh target/*.jar
+    - echo "==> Simulando envio para servidor de produção..."
+    - echo "    Branch   -> $CI_COMMIT_REF_NAME"
+    - echo "    Commit   -> $CI_COMMIT_SHORT_SHA"
+    - echo "    Pipeline -> $CI_PIPELINE_ID"
+    - echo "==> Deploy concluído!"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  artifacts:
+    paths:
+      - target/*.jar
+    expire_in: 1 week
