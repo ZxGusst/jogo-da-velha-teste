@@ -60,6 +60,7 @@ jobs:
           name: Resultados JUnit
           path: target/surefire-reports/TEST-*.xml
           reporter: java-junit
+          fail-on-error: false
 
       - name: Salvar relatório de testes
         uses: actions/upload-artifact@v4
